@@ -1,42 +1,95 @@
-#include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
-#include <memory.h>
 #include <stdlib.h>
+#include <string.h>
 
-struct Text {
-	uint32_t *arr;
-	int off;
-	int len;
-};
+typedef uint32_t	Cp;
+typedef size_t		Off;
+typedef size_t		Len;
 
-struct Text *mk_text(uint32_t *arr, int off, int len)
+typedef struct Text {
+	Cp	*arr;			/* Unicode code point data. */
+	Off	off;			/* Offset in code points. */
+	Len	len;			/* Length in code points. */
+} Text;
+
+enum Ordering {LT, GT, EQ};
+
+Text *
+text_mk(Cp *arr, Off off, Len len, Text *dest)
 {
-	struct Text *cs = malloc(sizeof(struct Text));
-	*cs = (struct Text){.off=0, .len=0};
-	cs->arr = memcpy(cs->arr, arr, 8*len);
-	cs->off = off;
-	cs->len = len;
-	return cs;
+	*dest = (Text){.arr=arr, .off=off, .len=len};
+	return dest;
 }
 
-void u_mk_text(struct Text *cs)
+Text *
+text_copy(Text *x0, Text *dest)
 {
-	assert(cs != NULL);
-	free(cs->arr);
-	free(cs);
+	*dest = *x0;
+	return dest;
 }
 
-void show_text(struct Text *cs)
+void
+text_unmk(Text *x)
 {
-	printf("Array location: %p\n", cs->arr);
-	printf("\tOffset: %u\n", cs->off);
-	printf("\tLength: %u\n", cs->len);
+	free(x);
 }
 
-int main(int argc, char *argv[])
+size_t
+size_t_min(size_t x, size_t y)
 {
-	uint32_t arr0[] = {5, 3, 2, 1};
-	struct Text *text0 = mk_text(*arr0, 0, 4);
-	u_mk_text(text0);
+	return x <= y ? x : y;
+}
+
+enum Ordering
+size_t_compare(size_t x, size_t y)
+{
+	if (x > y)
+                return GT;
+	if (x < y)
+                return LT;
+	return EQ;
+}
+
+enum Ordering
+text_compare(Text *x, Text *y)
+{
+	if (x->len == 0 && y->len == 0)
+                return EQ;
+	size_t min_len = size_t_min(x->len, y->len);
+	for (int i = 0; i < min_len; i++) {
+		if (x->arr[i] < y->arr[i])
+                        return LT;
+		if (x->arr[i] > y->arr[i])
+                        return GT;
+	}
+	return x->len == y->len ? EQ : size_t_compare(x->len, y->len);
+}
+
+char *
+text_show(Text *x)
+{
+        char *o = strdup("Text [");
+	asprintf(&o, "%s%08X", o, x->arr[x->off]);
+        for (int i = 1 + x->off; i < x->len; i++) {
+		char *fmt;
+		if (i % 8 == 0) { 
+			fmt = "%s,\n      %08X";
+		} else {
+			fmt = "%s, %08X";
+		}
+                asprintf(&o, fmt, o, x->arr[i]);
+        }
+	asprintf(&o, "%s]\nOffset %lu\nLength %lu\n", o, x->off, x->len);
+	asprintf(&o, "%sPointer %p\n", o, x->arr);
+        return o;
+}
+
+int
+main()
+{
+	Text *x = malloc(sizeof(Text));
+	Cp *in = U"Blah blah blah";
+        x = text_mk(in, 0, 14, x);
+        printf("%s\n", text_show(x));
+	text_unmk(x);
 }
