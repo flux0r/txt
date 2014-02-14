@@ -1,36 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <wchar.h>
 
-typedef uint32_t	Cp;
-typedef size_t		Off;
-typedef size_t		Len;
+#include "array.h"
 
-typedef struct Text {
-	Cp	*arr;			/* Unicode code point data. */
+struct Text {
+	Cp	*arr;		        /* Unicode code point data. */
 	Off	off;			/* Offset in code points. */
 	Len	len;			/* Length in code points. */
-} Text;
+};
 
-enum Ordering {LT, GT, EQ};
-
-Text *
-text_mk(Cp *arr, Off off, Len len, Text *dest)
+struct Text *
+text_mk(Cp *arr, Off off, Len len, struct Text *dest)
 {
-	*dest = (Text){.arr=arr, .off=off, .len=len};
+	*dest = (struct Text){.arr=arr, .off=off, .len=len};
 	return dest;
 }
 
-Text *
-text_copy(Text *x0, Text *dest)
+struct Text *
+text_copy(struct Text *x0, struct Text *dest)
 {
 	*dest = *x0;
 	return dest;
 }
 
 void
-text_unmk(Text *x)
+text_unmk(struct Text *x)
 {
 	free(x);
 }
@@ -52,7 +47,7 @@ size_t_compare(size_t x, size_t y)
 }
 
 enum Ordering
-text_compare(Text *x, Text *y)
+text_compare(struct Text *x, struct Text *y)
 {
 	if (x->len == 0 && y->len == 0)
                 return EQ;
@@ -67,7 +62,7 @@ text_compare(Text *x, Text *y)
 }
 
 char *
-text_show(Text *x)
+text_show(struct Text *x)
 {
         char *o = strdup("Text [");
 	asprintf(&o, "%s%08X", o, x->arr[x->off]);
@@ -88,7 +83,7 @@ text_show(Text *x)
 int
 main()
 {
-	Text *x = malloc(sizeof(Text));
+	struct Text *x = malloc(sizeof(struct Text));
 	Cp *in = U"Blah blah blah";
         x = text_mk(in, 0, 14, x);
         printf("%s\n", text_show(x));
